@@ -54,7 +54,11 @@ def translateProgram(startClause, endClause, file_name):
 
 fh = open("translate.tex","w")
 
+fh.write(latexTemplates.latexHeader())
+
 syllogism = "aa1"
+
+fh.write(latexTemplates.syllSection(syllogism))
 
 latex_program = translateProgram("clause(", ").", "../1212/" + config.programs_dir + "/" + syllogism + config.prolog_file)
 
@@ -63,6 +67,8 @@ fh.write(latexTemplates.programToTemplate(syllogism, latex_program))
 latex_program = translateProgram("clause_g((", ")).", "../1212/" + config.ground_dir + "/" + syllogism + config.ground_file)
 fh.write(latexTemplates.gProgramToTemplate(syllogism, latex_program))
 
+
+fh.write(latexTemplates.latexFooter())
 fh.close()
 
 
