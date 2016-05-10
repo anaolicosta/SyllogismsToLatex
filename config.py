@@ -9,10 +9,9 @@ Inside of Base  directory we have the following folders:
 """
 
 #Sub directories
-#TO CHECK: Do we need to take care of // and /??
-gound_dir = file_dir + "groundP"
-leastmodels_dir = file_dir + "leastmodels"
-programs_dor = file_dir + "Programs"
+ground_dir = file_dir + "groundP//"
+leastmodels_dir = file_dir + "leastmodels//"
+programs_dir = file_dir + "Programs//"
 
 """
 Each type of file can have a different termintation
@@ -22,3 +21,8 @@ prolog_file = ".pl"
 ground_file = "g.pl"
 leastmodel_file = "glm.pl"
 
+
+"""
+Syllogisms to generate
+"""
+generate = ['ae3', 'ie4', 'ie2', 'ea4', 'ei4']
