@@ -1,5 +1,11 @@
 from array import array
 
+#To create .csv file with results
+from subprocess import call
+
+#To read a .csv file
+import csv
+
 #File with methods to incorporate information into a predefined latex encoding
 import latexTemplates 
 #File with constants used to build path to files
@@ -13,6 +19,7 @@ def translateProgram(startClause, endClause, file_name):
     latex_program = ""
 
     for i in range(0,len(lines)-1):
+        #Escape commented lines
         if lines[i][0] != '%':
             new_line = lines[i]
             #Objects
@@ -56,6 +63,43 @@ def translateProgram(startClause, endClause, file_name):
     return latex_program[:len(latex_program)-1]
 
 
+if config.include_EntailedConclusions or config.include_Experiments:
+    #Create .csv
+    return_code = call("soffice --headless --convert-to csv " + config.file_ods_results, shell=True)  
+    if return_code == 0:
+        print "CSV file with results created sucessfully!"
+        #Read CSV file
+        csv_file = open(config.file_csv_results, 'rb')
+        try:
+            reader = csv.reader(csv_file)
+            #Save line with rows explanation
+            #We need to iterate twice to save the second row
+            rows_names = reader.next()
+            rows_names = reader.next()
+
+            first_WCS_colunm = rows_names.index("Aac")
+            last_WCS_colunm = rows_names.index("NVC")
+            
+            # Create a dictionary with elements: 
+            # Syllogism ID: ([List Predictions by WCS], [List Results Experiments])
+            dict_results = {}
+            
+            for row in reader:
+                wcs_predictions = []
+                i = first_WCS_colunm
+                for col in row[first_WCS_colunm:last_WCS_colunm]:
+                    if col == '1':
+                        wcs_predictions.append(rows_names[i])
+                    i = i+1
+
+                # Indice 0 has the row number
+                dict_results[row[1].lower()] = wcs_predictions
+            #TODO: We will have an empty line in the end
+            #Note: We cannot guarantee order in the dictionary
+            print "Dictionary: " + str (dict_results) + "\n with size: " + str(len(dict_results))
+
+        finally:
+                csv_file.close()      # closing
 
 
 fh = open("translate.tex","w")
@@ -63,7 +107,6 @@ fh = open("translate.tex","w")
 #Latex file header
 fh.write(latexTemplates.latexHeader())
 
-directory = config.file_dir + config.pattern + "//"
 
 for syllogism in config.generate:
     file_id = syllogism
@@ -74,18 +117,18 @@ for syllogism in config.generate:
 
     #Program
     if config.include_Program:
-        latex_program = translateProgram("clause(", ").", directory + config.programs_dir + "/" + file_id + config.prolog_file)
+        latex_program = translateProgram("clause(", ").", config.programs_dir + "/" + file_id + config.prolog_file)
         fh.write(latexTemplates.programToTemplate(syllogism, latex_program))
 
     #Grounded Program
     if config.include_GProgram:
-        latex_program = translateProgram("clause_g((", ")).", directory + config.ground_dir + "/" + file_id + config.ground_file)
+        latex_program = translateProgram("clause_g((", ")).", config.ground_dir + "/" + file_id + config.ground_file)
         fh.write(latexTemplates.gProgramToTemplate(syllogism, latex_program))
 
     #TODO: Least Model
 
     #TODO: EntailedConclusions
-
+    fh.write("Entailed conlusions: " + str(dict_results[file_id]))
     #TODO: Experiments
 
 #Latex file footer
