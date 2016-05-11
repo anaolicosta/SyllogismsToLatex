@@ -1,3 +1,7 @@
+def formatSyllogism(syllogism):
+    formattedSyll = syllogism.upper()
+    return "\\M"+ formattedSyll[0] + "\\M" + formattedSyll[1] + " " + formattedSyll[2]
+
 def latexHeader():
     header = r"""\documentclass[11pt]{article}
 \usepackage{amssymb} 

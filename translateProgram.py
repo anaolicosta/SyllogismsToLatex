@@ -1,12 +1,12 @@
 from array import array
 
+#File with methods to incorporate information into a predefined latex encoding
 import latexTemplates 
+#File with constants used to build path to files
 import config
 
 
 def translateProgram(startClause, endClause, file_name): 
-    #raw_input("File name: ")
-
     fh = open(file_name, "r")
     lines = fh.readlines()
     
@@ -24,7 +24,13 @@ def translateProgram(startClause, endClause, file_name):
             new_line = new_line.replace(",", r" \wedge ")
             #Negation
             new_line = new_line.replace("n(", r" \neg ")
+            #Negation 
+            #This needs to be done BEFORE Abnormalities, to keep nx inside of them
+            new_line = new_line.replace("na", "a'") 
+            new_line = new_line.replace("nb", "b'")
+            new_line = new_line.replace("nc", "c'")
             #Abnormalities
+            #TODO: Missing negation!!!!
             new_line = new_line.replace("abab", r" \Ab_{ab}")
             new_line = new_line.replace("abba", r" \Ab_{ba}")
             new_line = new_line.replace("abac", r" \Ab_{ac}")
@@ -54,21 +60,37 @@ def translateProgram(startClause, endClause, file_name):
 
 fh = open("translate.tex","w")
 
+#Latex file header
 fh.write(latexTemplates.latexHeader())
 
-syllogism = "aa1"
+directory = config.file_dir + config.pattern + "//"
 
-fh.write(latexTemplates.syllSection(syllogism))
+for syllogism in config.generate:
+    file_id = syllogism
+    syllogism = latexTemplates.formatSyllogism(syllogism)
+    
+    #Syllogims section
+    fh.write(latexTemplates.syllSection(syllogism))
 
-latex_program = translateProgram("clause(", ").", "../1212/" + config.programs_dir + "/" + syllogism + config.prolog_file)
+    #Program
+    if config.include_Program:
+        latex_program = translateProgram("clause(", ").", directory + config.programs_dir + "/" + file_id + config.prolog_file)
+        fh.write(latexTemplates.programToTemplate(syllogism, latex_program))
 
-fh.write(latexTemplates.programToTemplate(syllogism, latex_program))
+    #Grounded Program
+    if config.include_GProgram:
+        latex_program = translateProgram("clause_g((", ")).", directory + config.ground_dir + "/" + file_id + config.ground_file)
+        fh.write(latexTemplates.gProgramToTemplate(syllogism, latex_program))
 
-latex_program = translateProgram("clause_g((", ")).", "../1212/" + config.ground_dir + "/" + syllogism + config.ground_file)
-fh.write(latexTemplates.gProgramToTemplate(syllogism, latex_program))
+    #TODO: Least Model
 
+    #TODO: EntailedConclusions
 
+    #TODO: Experiments
+
+#Latex file footer
 fh.write(latexTemplates.latexFooter())
+
 fh.close()
 
 
