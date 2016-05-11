@@ -1,16 +1,14 @@
-"""
-Translate a syllogism to its Latex representation
-using the correspondent abbreviature.
-Example: 'aa1' is translated to '\MA\MA 1'
-"""
+#
+#Translate a syllogism to its Latex representation
+#using the correspondent abbreviature.
+#Example: 'aa1' is translated to '\MA\MA 1'
 def formatSyllogism(syllogism):
     formattedSyll = syllogism.upper()
     return "\\M"+ formattedSyll[0] + "\\M" + formattedSyll[1] + " " + formattedSyll[2]
 
-"""
-Header for the latex file.
-Define type of latex file, packages to include, title of the document,...
-"""
+#
+#Header for the latex file.
+#Define type of latex file, packages to include, title of the document,...
 def latexHeader():
     header = r"""\documentclass[11pt]{article}
 \usepackage{amssymb} 
@@ -28,22 +26,19 @@ def latexHeader():
 """
     return header
 
-"""
-Ends Latex document.
-"""
+#
+#Ends Latex document.
 def latexFooter():
     return "\end{document}"
 
-"""
-Add section for a given syllogism.
-"""
+#
+#Add section for a given syllogism.
 def syllSection(syllogism):
     return "\section{%s} \n" % syllogism
 
-"""
-Returns the program already translated to latex notation
-inserted in our Latex template for programs.
-"""
+#
+#Returns the program already translated to latex notation
+#inserted in our Latex template for programs.
 def programToTemplate(syllogism, latex_program):
     program = """$\CalP_{%s}$ consists of the following clauses:
 \[
@@ -53,10 +48,9 @@ def programToTemplate(syllogism, latex_program):
 \]
  """ % (syllogism, latex_program)
     return program
-"""
-Returns the grounded program already translated to latex notation
-inserted in our Latex template for grounded programs.
-"""
+#
+#Returns the grounded program already translated to latex notation
+#inserted in our Latex template for grounded programs.
 def gProgramToTemplate(syllogism, latex_program):
     program = """The grounded version of $\CalP_{%s}$ is as follows:
 \[
@@ -67,10 +61,9 @@ def gProgramToTemplate(syllogism, latex_program):
  """ % (syllogism, latex_program)
     return program
 
-"""
-Returns the least model already translated to latex notation
-inserted in out latex template for least models.
-"""
+#
+#Returns the least model already translated to latex notation
+#inserted in out latex template for least models.
 def leastModelToTemplate(syllogism, trueModel, falseModel):
     leastModelTemplate = """The least \L-model of $\CalP_{%s}$ is
 \[

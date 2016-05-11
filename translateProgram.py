@@ -63,50 +63,93 @@ def translateProgram(startClause, endClause, file_name):
     return latex_program[:len(latex_program)-1]
 
 
-if config.include_EntailedConclusions or config.include_Experiments:
-    #Create .csv
-    return_code = call("soffice --headless --convert-to csv " + config.file_ods_results, shell=True)  
-    if return_code == 0:
-        print "CSV file with results created sucessfully!"
-        #Read CSV file
-        csv_file = open(config.file_csv_results, 'rb')
-        try:
-            reader = csv.reader(csv_file)
-            #Save line with rows explanation
-            #We need to iterate twice to save the second row
-            rows_names = reader.next()
-            rows_names = reader.next()
+#
+# Create a dictionary with elements of the form: 
+# Syllogism ID: [[List Predictions by WCS], [List Results Experiments]]
+def getEntailmentAndExperiments():
+    dict_results = {}
+    if config.include_EntailedConclusions or config.include_Experiments:
+        #Create .csv
+        return_code = call("soffice --headless --convert-to csv " + config.file_ods_results, shell=True)  
+        if return_code == 0:
+            print "CSV file with results created sucessfully!"
+            #Read CSV file
+            csv_file = open(config.file_csv_results, 'rb')
+            try:
+                reader = csv.reader(csv_file)
+                #Save line with rows explanation
+                #We need to iterate twice to save the second row
+                rows_names = reader.next()
+                rows_names = reader.next()
 
-            first_WCS_colunm = rows_names.index("Aac")
-            last_WCS_colunm = rows_names.index("NVC")
-            
-            # Create a dictionary with elements: 
-            # Syllogism ID: ([List Predictions by WCS], [List Results Experiments])
-            dict_results = {}
-            
-            for row in reader:
-                wcs_predictions = []
-                i = first_WCS_colunm
-                for col in row[first_WCS_colunm:last_WCS_colunm]:
-                    if col == '1':
-                        wcs_predictions.append(rows_names[i])
-                    i = i+1
+                #Get colunms numbers with WCS results
+                first_WCS_col = rows_names.index("Aac")
+                last_WCS_col = rows_names.index("NVC")
 
-                # Indice 0 has the row number
-                dict_results[row[1].lower()] = wcs_predictions
-            #TODO: We will have an empty line in the end
-            #Note: We cannot guarantee order in the dictionary
-            print "Dictionary: " + str (dict_results) + "\n with size: " + str(len(dict_results))
+                #Ger colunms numbers with experiments results
+                rows_names_no_wcs = rows_names[last_WCS_col+1:]
 
-        finally:
-                csv_file.close()      # closing
+                first_exp_col = rows_names_no_wcs.index("Aac") + last_WCS_col + 1
+                last_exp_col = rows_names_no_wcs.index("NVC") + last_WCS_col + 1
 
+                
+                for row in reader:
+                    wcs_predictions = []
+                    exp_results = []
+                    
+                    #Entailed conlusions
+                    if config.include_EntailedConclusions:
+                        i = first_WCS_col
+                        for col in row[first_WCS_col:last_WCS_col+1]:
+                            if col == '1':
+                                wcs_predictions.append(rows_names[i].upper())
+                        i = i+1
+
+                    #Results from experiments
+                    if config.include_Experiments:
+                        i = first_exp_col
+                        for col in row[first_exp_col:last_exp_col+1]:
+                            if col == '1':
+                                exp_results.append(rows_names[i].upper())
+                        i = i+1
+
+                    # Indice 0 has the row number
+                    dict_results[row[1].lower()] = [wcs_predictions, exp_results]
+ 
+            finally:
+                csv_file.close() 
+        
+        return dict_results
+
+#
+# Return a list with two elements: 
+# * first: list with atoms that are True
+# * second: list with atoms that are False
+#
+# Attention: It is assumed that there is only one line in the file
+def translateLeastModel(syllogism):
+    fh = open(config.leastmodels_dir + syllogism + config.leastmodel_file, "r")
+    lines = fh.readlines()
+    model = lines[0]
+    model = model.replace("o", "o_")
+    #Abnormalities
+    #TODO: Missing negation!!!!
+    model = model.replace("abab", r" \Ab_{ab}")
+    model = model.replace("abba", r" \Ab_{ba}")
+    model = model.replace("abac", r" \Ab_{ac}")
+    model = model.replace("abca", r" \Ab_{ca}")
+    model = model.replace("abcb", r" \Ab_{cb}")
+    model = model.replace("abbc", r" \Ab_{bc}")    
+    model = model.translate(None, '.[]')
+
+    return model.split("-", 1)        
 
 fh = open("translate.tex","w")
 
 #Latex file header
 fh.write(latexTemplates.latexHeader())
 
+results_entailment_experiment = getEntailmentAndExperiments()
 
 for syllogism in config.generate:
     file_id = syllogism
@@ -126,10 +169,15 @@ for syllogism in config.generate:
         fh.write(latexTemplates.gProgramToTemplate(syllogism, latex_program))
 
     #TODO: Least Model
-
+    if config.include_LeastModel:
+        models = translateLeastModel(file_id)
+        fh.write("\\\\Least model:\\\\ $\{" + str(models[0]) + " \}$\\\\ $\{" + str(models[1])+ "\}$" )    
     #TODO: EntailedConclusions
-    fh.write("Entailed conlusions: " + str(dict_results[file_id]))
+    if config.include_EntailedConclusions:
+        fh.write("\\\\Entailed conlusions: " + str(results_entailment_experiment[file_id][0]))
     #TODO: Experiments
+    if config.include_Experiments:
+        fh.write("\\\\Experiments results: " + str(results_entailment_experiment[file_id][1]))
 
 #Latex file footer
 fh.write(latexTemplates.latexFooter())
