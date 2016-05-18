@@ -10,18 +10,23 @@ gprogram_base_pattern = re.compile(r"clause_g\(\(" + program_pattern + "\)\)\.(\
 
 #### Configures behavior
 
+# File name for latex file to create
+latexFileName = "syllogisms.tex"
+
 #Pattern of our experiments. This is used to build the folder path.
 pattern = "1212"
 
 #Title of document
-doc_Title = "Syllogisms with pattern " + pattern + "(0.67)"
+doc_Title = "Syllogisms with pattern " + pattern
 
 #
 #Syllogisms to generate
 
+#78
 #generate = ['aa2', 'aa4', 'ai4', 'ae4', 'ao2', 'ia2', 'ia3','ia4','ii2','ie3','io2','ea4','ei3','ee2','eo1','oa1','oa2','oa3','oi1','oe1']
-generate = ['ae3', 'ie2','ie4','ea3','ei4']
-
+#65
+#generate = ['ae3', 'ie2','ie4','ea3','ei4']
+generate = []
 #
 #Information to include in latex file
 #

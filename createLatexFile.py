@@ -137,14 +137,16 @@ def translateLeastModel(syllogism):
     model = model.translate(None, "[]")
     return model.split("-", 1)        
 
-fh = open("translate.tex","w")
 
 #
 # Replace each ab* by its latex abbreviation \Ab_{*}
 def translateAbnormalities(str):
     return re.sub(r"(ab)([\w']+)", r"\Ab_{\2}", str)
 
-#
+
+
+# Create file
+fh = open(config.latexFileName,"w")
 #Add Latex file header
 fh.write(latexTemplates.latexHeader())
 
@@ -156,7 +158,17 @@ results_entailment_experiment = getEntailmentAndExperiments()
 # Iterate through each syllogism listed in config.generate
 # TODO: Add possibility of having this list empyt, then it should
 # iterate over all syllogisms
-for syllogism in config.generate:
+syllToGenerate = []
+if len(config.generate) > 0:
+    syllToGenerate = config.generate
+else:
+    moods = ['a','i','e','o']
+    for mood1 in moods:
+        for mood2 in moods:
+            for figure in ['1','2','3','4']:
+                syllToGenerate.append(mood1 + mood2 + figure )
+
+for syllogism in syllToGenerate:
 
     file_id = syllogism
     syllogism = latexTemplates.formatSyllogism(syllogism)
