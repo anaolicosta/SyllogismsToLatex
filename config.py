@@ -1,12 +1,26 @@
+import re
+
+# String with program's prolog encoding to be use in the regular expression
+program_pattern = r"([\w\(\)']+)\ ?:\-\ ?\[([\w,\(\)']+)\]"
+
+# Regular expressions for programs and groundded programs
+program_base_pattern = re.compile(r"clause\(" + program_pattern + "\)\.(\n)?")
+gprogram_base_pattern = re.compile(r"clause_g\(\(" + program_pattern + "\)\)\.(\n)?")
+
+
 #### Configures behavior
 
 #Pattern of our experiments. This is used to build the folder path.
 pattern = "1212"
 
+#Title of document
+doc_Title = "Syllogisms with pattern " + pattern + "(0.67)"
+
 #
 #Syllogisms to generate
-#
-generate = ['ae3', 'ie4', 'ie2', 'ea4', 'ei4']
+
+#generate = ['aa2', 'aa4', 'ai4', 'ae4', 'ao2', 'ia2', 'ia3','ia4','ii2','ie3','io2','ea4','ei3','ee2','eo1','oa1','oa2','oa3','oi1','oe1']
+generate = ['ae3', 'ie2','ie4','ea3','ei4']
 
 #
 #Information to include in latex file

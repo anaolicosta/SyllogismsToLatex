@@ -6,61 +6,56 @@ from subprocess import call
 #To read a .csv file
 import csv
 
+#Regular expressions
+import re
+
 #File with methods to incorporate information into a predefined latex encoding
 import latexTemplates 
+
 #File with constants used to build path to files
 import config
 
 
-def translateProgram(startClause, endClause, file_name): 
+#
+# Read prolog file and return a string with the program in latex format
+def translateProgram(pattern, file_name): 
     fh = open(file_name, "r")
     lines = fh.readlines()
     
     latex_program = ""
 
-    for i in range(0,len(lines)-1):
+    for i in range(0,len(lines)):
         #Escape commented lines
         if lines[i][0] != '%':
             new_line = lines[i]
             #Objects
             #This need to be done BEFORE translating implication
             new_line = new_line.replace("o", "o_")
-            #Implication
-            new_line = new_line.replace(":-", r" \leftarrow ")
+            #Main pattern. Clean most of the stuff
+            new_line = re.sub(pattern,r"\1 \leftarrow \2 \n", new_line)
+            #Abnormalities
+            new_line = translateAbnormalities(new_line)
             #Conjunction
             new_line = new_line.replace(",", r" \wedge ")
-            #Negation
-            new_line = new_line.replace("n(", r" \neg ")
-            #Negation 
-            #This needs to be done BEFORE Abnormalities, to keep nx inside of them
+            #Negation atoms 
             new_line = new_line.replace("na", "a'") 
             new_line = new_line.replace("nb", "b'")
             new_line = new_line.replace("nc", "c'")
-            #Abnormalities
-            #TODO: Missing negation!!!!
-            new_line = new_line.replace("abab", r" \Ab_{ab}")
-            new_line = new_line.replace("abba", r" \Ab_{ba}")
-            new_line = new_line.replace("abac", r" \Ab_{ac}")
-            new_line = new_line.replace("abca", r" \Ab_{ca}")
-            new_line = new_line.replace("abcb", r" \Ab_{cb}")
-            new_line = new_line.replace("abbc", r" \Ab_{bc}")    
-            #Top
-            new_line = new_line.replace("[t]", r" \top ")
-            #Bottom
-            new_line = new_line.replace("[f]", r" \bot ")
             #Add reference to new line
             new_line = new_line.replace("\n", "\\\\ \n")
+            #Negation
+            new_line = new_line.replace("n(", r"\neg ")
+            #Top
+            new_line = new_line.replace(r"t \\", r" \top \\")
+            #Bottom
+            new_line = new_line.replace(r"f \\", r" \bot \\")
             #To delete. Do it just in the end.
-            new_line = new_line.replace(startClause, "")
-            new_line = new_line.replace(endClause, "")
             new_line = new_line.replace("))", ")")    
-            new_line = new_line.translate(None, '.[]')
 
-            #new_lines.append(new_line + r"\\ \n")
             latex_program = latex_program + new_line
 
     #Take the last new line
-    return latex_program[:len(latex_program)-1]
+    return latex_program
 
 
 #
@@ -86,7 +81,7 @@ def getEntailmentAndExperiments():
                 first_WCS_col = rows_names.index("Aac")
                 last_WCS_col = rows_names.index("NVC")
 
-                #Ger colunms numbers with experiments results
+                #Get colunms numbers with experiments results
                 rows_names_no_wcs = rows_names[last_WCS_col+1:]
 
                 first_exp_col = rows_names_no_wcs.index("Aac") + last_WCS_col + 1
@@ -103,7 +98,7 @@ def getEntailmentAndExperiments():
                         for col in row[first_WCS_col:last_WCS_col+1]:
                             if col == '1':
                                 wcs_predictions.append(rows_names[i].upper())
-                        i = i+1
+                            i = i+1
 
                     #Results from experiments
                     if config.include_Experiments:
@@ -111,7 +106,7 @@ def getEntailmentAndExperiments():
                         for col in row[first_exp_col:last_exp_col+1]:
                             if col == '1':
                                 exp_results.append(rows_names[i].upper())
-                        i = i+1
+                            i = i+1
 
                     # Indice 0 has the row number
                     dict_results[row[1].lower()] = [wcs_predictions, exp_results]
@@ -131,27 +126,38 @@ def translateLeastModel(syllogism):
     fh = open(config.leastmodels_dir + syllogism + config.leastmodel_file, "r")
     lines = fh.readlines()
     model = lines[0]
+    #Objects
     model = model.replace("o", "o_")
     #Abnormalities
-    #TODO: Missing negation!!!!
-    model = model.replace("abab", r" \Ab_{ab}")
-    model = model.replace("abba", r" \Ab_{ba}")
-    model = model.replace("abac", r" \Ab_{ac}")
-    model = model.replace("abca", r" \Ab_{ca}")
-    model = model.replace("abcb", r" \Ab_{cb}")
-    model = model.replace("abbc", r" \Ab_{bc}")    
-    model = model.translate(None, '.[]')
-
+    model = translateAbnormalities(model)
+    #Negation atoms 
+    model = model.replace("na", "a'") 
+    model = model.replace("nb", "b'")
+    model = model.replace("nc", "c'")
+    model = model.translate(None, "[]")
     return model.split("-", 1)        
 
 fh = open("translate.tex","w")
 
-#Latex file header
+#
+# Replace each ab* by its latex abbreviation \Ab_{*}
+def translateAbnormalities(str):
+    return re.sub(r"(ab)([\w']+)", r"\Ab_{\2}", str)
+
+#
+#Add Latex file header
 fh.write(latexTemplates.latexHeader())
 
+# Get results of entailment and experiments
+# Each of those  will only be evaluted with config.include_EntailedConclusions
+# or config.include_Experiments are set to True, resp.
 results_entailment_experiment = getEntailmentAndExperiments()
 
+# Iterate through each syllogism listed in config.generate
+# TODO: Add possibility of having this list empyt, then it should
+# iterate over all syllogisms
 for syllogism in config.generate:
+
     file_id = syllogism
     syllogism = latexTemplates.formatSyllogism(syllogism)
     
@@ -160,24 +166,31 @@ for syllogism in config.generate:
 
     #Program
     if config.include_Program:
-        latex_program = translateProgram("clause(", ").", config.programs_dir + "/" + file_id + config.prolog_file)
+        latex_program = translateProgram(config.program_base_pattern, config.programs_dir + "/" + file_id + config.prolog_file)
         fh.write(latexTemplates.programToTemplate(syllogism, latex_program))
 
     #Grounded Program
     if config.include_GProgram:
-        latex_program = translateProgram("clause_g((", ")).", config.ground_dir + "/" + file_id + config.ground_file)
+        latex_program = translateProgram(config.gprogram_base_pattern, config.ground_dir + "/" + file_id + config.ground_file)
         fh.write(latexTemplates.gProgramToTemplate(syllogism, latex_program))
 
-    #TODO: Least Model
+    #Least Model
     if config.include_LeastModel:
         models = translateLeastModel(file_id)
-        fh.write("\\\\Least model:\\\\ $\{" + str(models[0]) + " \}$\\\\ $\{" + str(models[1])+ "\}$" )    
-    #TODO: EntailedConclusions
+        fh.write(latexTemplates.leastModelToTemplate(syllogism, models[0], models[1]))    
+    #EntailedConclusions
     if config.include_EntailedConclusions:
-        fh.write("\\\\Entailed conlusions: " + str(results_entailment_experiment[file_id][0]))
-    #TODO: Experiments
+        entailed = str(results_entailment_experiment[file_id][0])
+        #Remove '[' and ']'
+        entailed = entailed[1:len(entailed)-1]
+        fh.write(latexTemplates.entailedToTemplate(entailed))
+
+    #Experiments
     if config.include_Experiments:
-        fh.write("\\\\Experiments results: " + str(results_entailment_experiment[file_id][1]))
+        experiments = str(results_entailment_experiment[file_id][1])
+        #Remove '[' and ']'
+        experiments = experiments[1:len(experiments)-1]
+        fh.write(latexTemplates.experimentsToTemplate(experiments))
 
 #Latex file footer
 fh.write(latexTemplates.latexFooter())

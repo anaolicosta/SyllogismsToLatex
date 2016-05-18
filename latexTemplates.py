@@ -1,3 +1,5 @@
+import config
+
 #
 #Translate a syllogism to its Latex representation
 #using the correspondent abbreviature.
@@ -15,7 +17,7 @@ def latexHeader():
 \usepackage{amsmath}
 \input{abbreviations} 
 
-\title{\textbf{Translation Syllogisms}}
+\title{\textbf{""" + config.doc_Title + r"""}}
 \date{\today}
 
 \begin{document}
@@ -38,7 +40,7 @@ def syllSection(syllogism):
 
 #
 #Returns the program already translated to latex notation
-#inserted in our Latex template for programs.
+#included already in our Latex template for programs.
 def programToTemplate(syllogism, latex_program):
     program = """$\CalP_{%s}$ consists of the following clauses:
 \[
@@ -50,7 +52,7 @@ def programToTemplate(syllogism, latex_program):
     return program
 #
 #Returns the grounded program already translated to latex notation
-#inserted in our Latex template for grounded programs.
+#included already in our Latex template for grounded programs.
 def gProgramToTemplate(syllogism, latex_program):
     program = """The grounded version of $\CalP_{%s}$ is as follows:
 \[
@@ -63,14 +65,32 @@ def gProgramToTemplate(syllogism, latex_program):
 
 #
 #Returns the least model already translated to latex notation
-#inserted in out latex template for least models.
+#included already in our latex template for least models.
 def leastModelToTemplate(syllogism, trueModel, falseModel):
     leastModelTemplate = """The least \L-model of $\CalP_{%s}$ is
 \[
 \\begin{array}{llllllllll}
-\langle & \{ %s\}, \\ 
+\langle & \{ %s\}, \\\\ 
  & \{ %s \} & \\rangle.
  \end{array}
  \] 
 """ % (syllogism, trueModel, falseModel)
-    return minimalModelTemplate
+    return leastModelTemplate
+
+#
+#Returns the entailed conclusions already translated to latex notation
+#included already in our latex template for least models.
+def entailedToTemplate(entailed_conclusions):
+    entailedTemplate = """
+Our entailed conclusions are: %s 
+    """ % entailed_conclusions
+    return entailedTemplate
+
+#
+#Returns the experiments results already translated to latex notation
+#included already in our latex template for least models.
+def experimentsToTemplate(experiments_results):
+    resultsTemplate = """
+The experiments results are: %s 
+    """ % experiments_results
+    return resultsTemplate
