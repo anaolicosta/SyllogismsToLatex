@@ -2,7 +2,7 @@ import config
 
 #
 #Translate a syllogism to its Latex representation
-#using the correspondent abbreviature.
+#using the correspondent abbreviation.
 #Example: 'aa1' is translated to '\MA\MA 1'
 def formatSyllogism(syllogism):
     formattedSyll = syllogism.upper()

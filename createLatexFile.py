@@ -12,12 +12,16 @@ import re
 #File with methods to incorporate information into a predefined latex encoding
 import latexTemplates 
 
-#File with constants used to build path to files
+#File with constants that configure behavior of this script
 import config
 
 
 #
-# Read prolog file and return a string with the program in latex format
+# Read prolog file and return a string with program in latex format
+#
+# Input: 
+# -> Pattern to analyze
+# -> Name of the file to generate
 def translateProgram(pattern, file_name): 
     fh = open(file_name, "r")
     lines = fh.readlines()
@@ -61,13 +65,20 @@ def translateProgram(pattern, file_name):
 #
 # Create a dictionary with elements of the form: 
 # Syllogism ID: [[List Predictions by WCS], [List Results Experiments]]
+#
+# This dictionary is built from information in .csv file
 def getEntailmentAndExperiments():
     dict_results = {}
+    # This method is only needed when the we want the data 
+    # from entailed conclusions or experimental results
+    # in the latex file.
     if config.include_EntailedConclusions or config.include_Experiments:
+        
         #Create .csv
         return_code = call("soffice --headless --convert-to csv " + config.file_ods_results, shell=True)  
         if return_code == 0:
             print "CSV file with results created sucessfully!"
+            
             #Read CSV file
             csv_file = open(config.file_csv_results, 'rb')
             try:
@@ -77,22 +88,22 @@ def getEntailmentAndExperiments():
                 rows_names = reader.next()
                 rows_names = reader.next()
 
-                #Get colunms numbers with WCS results
+                #Get columns numbers with WCS results
                 first_WCS_col = rows_names.index("Aac")
                 last_WCS_col = rows_names.index("NVC")
 
-                #Get colunms numbers with experiments results
+                #Get columns numbers with experiments results
                 rows_names_no_wcs = rows_names[last_WCS_col+1:]
 
                 first_exp_col = rows_names_no_wcs.index("Aac") + last_WCS_col + 1
                 last_exp_col = rows_names_no_wcs.index("NVC") + last_WCS_col + 1
 
-                
+                #Iterate over each row in the file
                 for row in reader:
                     wcs_predictions = []
                     exp_results = []
                     
-                    #Entailed conlusions
+                    #Entailed WCS conclusions
                     if config.include_EntailedConclusions:
                         i = first_WCS_col
                         for col in row[first_WCS_col:last_WCS_col+1]:
@@ -108,7 +119,7 @@ def getEntailmentAndExperiments():
                                 exp_results.append(rows_names[i].upper())
                             i = i+1
 
-                    # Indice 0 has the row number
+                    #Index 0 has the row number
                     dict_results[row[1].lower()] = [wcs_predictions, exp_results]
  
             finally:
@@ -144,6 +155,7 @@ def translateAbnormalities(str):
     return re.sub(r"(ab)([\w']+)", r"\Ab_{\2}", str)
 
 
+##### This is where the magic starts :-D 
 
 # Create file
 fh = open(config.latexFileName,"w")
@@ -151,13 +163,14 @@ fh = open(config.latexFileName,"w")
 fh.write(latexTemplates.latexHeader())
 
 # Get results of entailment and experiments
-# Each of those  will only be evaluted with config.include_EntailedConclusions
-# or config.include_Experiments are set to True, resp.
+# Each of those  will only be evaluated if 
+# config.include_EntailedConclusions
+# or config.include_Experiments 
+# are set to True, resp.
 results_entailment_experiment = getEntailmentAndExperiments()
 
 # Iterate through each syllogism listed in config.generate
-# TODO: Add possibility of having this list empyt, then it should
-# iterate over all syllogisms
+# If the list is empty it iterated through all the syllogisms.
 syllToGenerate = []
 if len(config.generate) > 0:
     syllToGenerate = config.generate
@@ -169,40 +182,60 @@ else:
                 syllToGenerate.append(mood1 + mood2 + figure )
 
 for syllogism in syllToGenerate:
-
-    file_id = syllogism
-    syllogism = latexTemplates.formatSyllogism(syllogism)
     
-    #Syllogims section
-    fh.write(latexTemplates.syllSection(syllogism))
+    file_id = syllogism
 
-    #Program
-    if config.include_Program:
-        latex_program = translateProgram(config.program_base_pattern, config.programs_dir + "/" + file_id + config.prolog_file)
-        fh.write(latexTemplates.programToTemplate(syllogism, latex_program))
+    isToAddToFile = (len(config.generate_filter) == 0)
+    for config_filter in config.generate_filter:
+        
+        if config_filter[0] == 'entails':
+            #Check if at least one of the entailnments is listed
+            #in the property.
+            for entailed in results_entailment_experiment[file_id][0]:
+                isToAddToFile |= (entailed in config_filter[1:]) 
+                
+        elif config_filter[0] == 'results':
+            #Check if at least one of the results is listed
+            #in the property.
+            for entailed in results_entailment_experiment[file_id][1]:
+                isToAddToFile |= (entailed in config_filter[1:]) 
 
-    #Grounded Program
-    if config.include_GProgram:
-        latex_program = translateProgram(config.gprogram_base_pattern, config.ground_dir + "/" + file_id + config.ground_file)
-        fh.write(latexTemplates.gProgramToTemplate(syllogism, latex_program))
 
-    #Least Model
-    if config.include_LeastModel:
-        models = translateLeastModel(file_id)
-        fh.write(latexTemplates.leastModelToTemplate(syllogism, models[0], models[1]))    
-    #EntailedConclusions
-    if config.include_EntailedConclusions:
-        entailed = str(results_entailment_experiment[file_id][0])
-        #Remove '[' and ']'
-        entailed = entailed[1:len(entailed)-1]
-        fh.write(latexTemplates.entailedToTemplate(entailed))
 
-    #Experiments
-    if config.include_Experiments:
-        experiments = str(results_entailment_experiment[file_id][1])
-        #Remove '[' and ']'
-        experiments = experiments[1:len(experiments)-1]
-        fh.write(latexTemplates.experimentsToTemplate(experiments))
+    if isToAddToFile:
+        syllogism = latexTemplates.formatSyllogism(syllogism)
+        
+        #Syllogism section
+        fh.write(latexTemplates.syllSection(syllogism))
+    
+        #Program
+        if config.include_Program:
+            latex_program = translateProgram(config.program_base_pattern, config.programs_dir + "/" + file_id + config.prolog_file)
+            fh.write(latexTemplates.programToTemplate(syllogism, latex_program))
+    
+        #Grounded Program
+        if config.include_GProgram:
+            latex_program = translateProgram(config.gprogram_base_pattern, config.ground_dir + "/" + file_id + config.ground_file)
+            fh.write(latexTemplates.gProgramToTemplate(syllogism, latex_program))
+    
+        #Least Model
+        if config.include_LeastModel:
+            models = translateLeastModel(file_id)
+            fh.write(latexTemplates.leastModelToTemplate(syllogism, models[0], models[1]))  
+              
+        #Entailed Conclusions
+        if config.include_EntailedConclusions:
+            entailed = str(results_entailment_experiment[file_id][0])
+            #Remove '[' and ']'
+            entailed = entailed[1:len(entailed)-1]
+            fh.write(latexTemplates.entailedToTemplate(entailed))
+    
+        #Experiments
+        if config.include_Experiments:
+            experiments = str(results_entailment_experiment[file_id][1])
+            #Remove '[' and ']'
+            experiments = experiments[1:len(experiments)-1]
+            fh.write(latexTemplates.experimentsToTemplate(experiments))
 
 #Latex file footer
 fh.write(latexTemplates.latexFooter())
