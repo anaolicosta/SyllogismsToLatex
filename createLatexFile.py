@@ -36,7 +36,7 @@ def translateProgram(pattern, file_name):
             #This need to be done BEFORE translating implication
             new_line = new_line.replace("o", "o_")
             #Main pattern. Clean most of the stuff
-            new_line = re.sub(pattern,r"\1 \leftarrow \2 \n", new_line)
+            new_line = re.sub(pattern,r"\1 & \leftarrow & \2 \n", new_line)
             #Abnormalities
             new_line = translateAbnormalities(new_line)
             #Conjunction

@@ -44,7 +44,7 @@ def syllSection(syllogism):
 def programToTemplate(syllogism, latex_program):
     program = """$\CalP_{%s}$ consists of the following clauses:
 \[
- \\begin{array}{l}
+ \\begin{array}{lll}
  %s
  \end{array}
 \]
@@ -83,7 +83,7 @@ def leastModelToTemplate(syllogism, trueModel, falseModel):
 def entailedToTemplate(entailed_conclusions, accuracy):
     entailedTemplate = """
 Our entailed conclusions are: %s 
-With accuracy: %s    
+\n With accuracy: %s    
     """ % (entailed_conclusions,accuracy) 
     return entailedTemplate
 
