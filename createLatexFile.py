@@ -110,6 +110,9 @@ def getEntailmentAndExperiments():
                             if col == '1':
                                 wcs_predictions.append(rows_names[i].upper())
                             i = i+1
+                        #Accuracy. 
+                        #Gets last element in the row
+                        wcs_predictions.append(row[-1])
 
                     #Results from experiments
                     if config.include_Experiments:
@@ -225,10 +228,11 @@ for syllogism in syllToGenerate:
               
         #Entailed Conclusions
         if config.include_EntailedConclusions:
-            entailed = str(results_entailment_experiment[file_id][0])
+            entailed = results_entailment_experiment[file_id][0]
+            entailed_conclusions = str(entailed[:-1])
             #Remove '[' and ']'
-            entailed = entailed[1:len(entailed)-1]
-            fh.write(latexTemplates.entailedToTemplate(entailed))
+            entailed_conclusions = entailed_conclusions[1:len(entailed_conclusions)-1]
+            fh.write(latexTemplates.entailedToTemplate(entailed_conclusions, str(entailed[-1])))
     
         #Experiments
         if config.include_Experiments:

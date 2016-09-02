@@ -80,10 +80,11 @@ def leastModelToTemplate(syllogism, trueModel, falseModel):
 #
 #Returns the entailed conclusions already translated to latex notation
 #included already in our latex template for least models.
-def entailedToTemplate(entailed_conclusions):
+def entailedToTemplate(entailed_conclusions, accuracy):
     entailedTemplate = """
 Our entailed conclusions are: %s 
-    """ % entailed_conclusions
+With accuracy: %s    
+    """ % (entailed_conclusions,accuracy) 
     return entailedTemplate
 
 #
