@@ -108,7 +108,10 @@ def getEntailmentAndExperiments():
                         i = first_WCS_col
                         for col in row[first_WCS_col:last_WCS_col+1]:
                             if col == '1':
-                                wcs_predictions.append(rows_names[i].upper())
+                                if rows_names[i].find("NVC")>-1:
+                                    wcs_predictions.append('\NVC')
+                                else:
+                                    wcs_predictions.append('\M' + rows_names[i][0]+ ' '+ rows_names[i][1:])
                             i = i+1
                         #Accuracy. 
                         #Gets last element in the row
@@ -119,7 +122,10 @@ def getEntailmentAndExperiments():
                         i = first_exp_col
                         for col in row[first_exp_col:last_exp_col+1]:
                             if col == '1':
-                                exp_results.append(rows_names[i].upper())
+                                if rows_names[i].find("NVC")>-1:
+                                    exp_results.append('\NVC')
+                                else:
+                                    exp_results.append('\M' + rows_names[i][0]+ ' '+ rows_names[i][1:] )
                             i = i+1
 
                     #Index 0 has the row number
@@ -229,16 +235,17 @@ for syllogism in syllToGenerate:
         #Entailed Conclusions
         if config.include_EntailedConclusions:
             entailed = results_entailment_experiment[file_id][0]
-            entailed_conclusions = str(entailed[:-1])
-            #Remove '[' and ']'
-            entailed_conclusions = entailed_conclusions[1:len(entailed_conclusions)-1]
+            entailed_conclusions = entailed[0]
+            for entail in entailed[1:-1]:
+                entailed_conclusions = entailed_conclusions + ", " + entail
             fh.write(latexTemplates.entailedToTemplate(entailed_conclusions, str(entailed[-1])))
     
         #Experiments
         if config.include_Experiments:
-            experiments = str(results_entailment_experiment[file_id][1])
-            #Remove '[' and ']'
-            experiments = experiments[1:len(experiments)-1]
+            exp_results = results_entailment_experiment[file_id][1]
+            experiments = exp_results[0]
+            for experiment in exp_results[1:-1]:
+                experiments = experiments + ", " + experiment
             fh.write(latexTemplates.experimentsToTemplate(experiments))
 
 #Latex file footer

@@ -40,7 +40,8 @@ generate = []
 #                   one of the listed entailments (Aac,Eac,Iac,Oac,Aca,Eca,Ica,Oca or NVC)
 
 #generate_filter= [['entails','NVC'],['results','NVC']]
-generate_filter= [['results','NVC']]
+#generate_filter= [['results','NVC']]
+generate_filter= []
 
 
 ## Information to include in latex file
