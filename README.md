@@ -1,4 +1,3 @@
-Python script to create a latex file with syllogisms encoding and entailment.
 
 ## How to configure it
 
@@ -26,9 +25,4 @@ Do not delete any constant from config.py file.
 ```
 python createLatexFile.py 
 ```
-
-## Contributors
-
-Ana Costa
-
 
